@@ -71,7 +71,7 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		
 		if(top.intValue()==10001) {
 			
-			//TODO:: Descobrir o local padrão do item
+			//TODO:: Descobrir o local padrï¿½o do item
 			BigDecimal local = pegarLocalPadrao(produto);
 			
 			if(local == null && produto.intValue()!=515613) {
@@ -104,7 +104,7 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		
 		}
 		
-		if(top.intValue()==10002) {
+		if((top.intValue()==10001) || (top.intValue()==10002)){
 			String usadoComo = getTgfpro(produto).asString("USOPROD");
 			if(usadoComo!=null) {
 				VO.setProperty("USOPROD", usadoComo);
@@ -140,7 +140,7 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		return VOs;
 	}
 	
-	private DynamicVO getTcspsc(BigDecimal contrato, BigDecimal produto) throws Exception { //produtos e serviços
+	private DynamicVO getTcspsc(BigDecimal contrato, BigDecimal produto) throws Exception { //produtos e serviï¿½os
 		DynamicVO VOs = null;
 		
 		
