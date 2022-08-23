@@ -11,7 +11,9 @@ import br.com.sankhya.jape.wrapper.JapeWrapper;
 import br.com.sankhya.modelcore.comercial.impostos.ImpostosHelpper;
 
 public class evento_valida_dados_astro implements EventoProgramavelJava {
-
+	
+	// 23/08/2022 vs 1.9 - Nicolas Oliveira - Foi incluso a top 10001 no IF que ajusta o usoprod;
+	
 	@Override
 	public void afterDelete(PersistenceEvent arg0) throws Exception {
 		// TODO Auto-generated method stub
@@ -71,7 +73,7 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		
 		if(top.intValue()==10001) {
 			
-			//TODO:: Descobrir o local padrão do item
+			//TODO:: Descobrir o local padrï¿½o do item
 			BigDecimal local = pegarLocalPadrao(produto);
 			
 			if(local == null && produto.intValue()!=515613) {
@@ -104,7 +106,7 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		
 		}
 		
-		if(top.intValue()==10002) {
+		if((top.intValue()==10001)||(top.intValue()==10002)) {
 			String usadoComo = getTgfpro(produto).asString("USOPROD");
 			if(usadoComo!=null) {
 				VO.setProperty("USOPROD", usadoComo);
@@ -140,7 +142,7 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		return VOs;
 	}
 	
-	private DynamicVO getTcspsc(BigDecimal contrato, BigDecimal produto) throws Exception { //produtos e serviços
+	private DynamicVO getTcspsc(BigDecimal contrato, BigDecimal produto) throws Exception { //produtos e serviï¿½os
 		DynamicVO VOs = null;
 		
 		
