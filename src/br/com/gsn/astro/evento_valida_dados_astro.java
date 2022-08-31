@@ -106,7 +106,11 @@ public class evento_valida_dados_astro implements EventoProgramavelJava {
 		
 		}
 		
+<<<<<<< HEAD
 		if((top.intValue()==10001)||(top.intValue()==10002)) {
+=======
+		if((top.intValue()==10001) || (top.intValue()==10002)){
+>>>>>>> master
 			String usadoComo = getTgfpro(produto).asString("USOPROD");
 			if(usadoComo!=null) {
 				VO.setProperty("USOPROD", usadoComo);
