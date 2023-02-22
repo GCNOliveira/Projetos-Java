@@ -68,7 +68,6 @@ public class evento_valida_dados_ecomm implements EventoProgramavelJava{
 	    BigDecimal valorOriginal = VO.asBigDecimal("VLRUNIT");
 	    BigDecimal novocodlocalorig = new BigDecimal(1117);
 	    
-	    
 	    if (nunota != null) {
 	      DynamicVO tgfcab = getTGFCAB(nunota);
 	      if (tgfcab != null) {
@@ -77,7 +76,7 @@ public class evento_valida_dados_ecomm implements EventoProgramavelJava{
 	        //if (usuarioInclusao.intValue() == 648) {
 	          DynamicVO tgfpro = getTGFPRO(produto);
 	          if (tgfpro != null) {
-	        	
+	        	  
 	        	//TODO::Verifica se é uma máquina 
 	        	BigDecimal grupoProduto = tgfpro.asBigDecimal("CODGRUPOPROD");
 	        	if(grupoProduto.intValue()>=500000 && grupoProduto.intValue()<600000) {//é uma máquina
@@ -88,13 +87,12 @@ public class evento_valida_dados_ecomm implements EventoProgramavelJava{
 	        		VO.setProperty("CODLOCALORIG", novocodlocalorig);
 	        	}
 	        	
-	        	
 	        	BigDecimal quantidade = null;
 	        	  
 	        	//TODO::Verifica a unidade e-commerce.  
 	            String unidadeVtex = tgfpro.asString("AD_UNIDADELV");
 	            if (!codvol.equals(unidadeVtex)) {
-	            	quantidade = getQuantidade(produto, unidadeVtex);
+	            	quantidade = getQuantidade(produto, unidadeVtex); //10
 	              if (quantidade != null) {
 	                VO.setProperty("QTDNEG", quantidadeOriginal.multiply(quantidade));
 	                VO.setProperty("CODVOL", unidadeVtex);
@@ -166,7 +164,7 @@ public class evento_valida_dados_ecomm implements EventoProgramavelJava{
 		DynamicVO VO = DAO.findOne("CODPROD=?",new Object[] { produto });
 		return VO;
 	}
-		
+			
 	public BigDecimal getQuantidade(BigDecimal produto, String unidade) {
 		BigDecimal qtd = null;
 		try {

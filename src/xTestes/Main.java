@@ -1,5 +1,6 @@
 package xTestes;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -9,15 +10,28 @@ import com.sankhya.util.TimeUtils;
 
 public class Main {
 	public static void main(String[] args) throws Exception {
-		Timestamp data = TimeUtils.getNow();
+		//Timestamp data = TimeUtils.getNow();
 		
-		Timestamp buildPrintableTimestamp = TimeUtils.buildPrintableTimestamp(data.getTime(), "dd/MM/yyyy HH:mm:ss");
+		//Timestamp buildPrintableTimestamp = TimeUtils.buildPrintableTimestamp(data.getTime(), "dd/MM/yyyy HH:mm:ss");
 		
-		Timestamp buildPrintableTimestamp2 = TimeUtils.buildPrintableTimestamp(TimeUtils.addWorkingDays(TimeUtils.getNow().getTime(), 3), "dd/MM/yyyy HH:mm:ss");
+		//Timestamp buildPrintableTimestamp2 = TimeUtils.buildPrintableTimestamp(TimeUtils.addWorkingDays(TimeUtils.getNow().getTime(), 3), "dd/MM/yyyy HH:mm:ss");
 		
-		Timestamp dataA = new Timestamp(TimeUtils.addWorkingDays(TimeUtils.getNow().getTime(), 3));
+		//Timestamp dataA = new Timestamp(TimeUtils.addWorkingDays(TimeUtils.getNow().getTime(), 3));
 		
-		System.out.println(dataA);
+		//System.out.println(dataA);
+		
+		int dia = 01;
+		int mes = 01;
+		int ano = 2023;
+		
+		Timestamp buildData = TimeUtils.buildData(dia, mes-1, ano);
+		System.out.println(buildData);
+		
+		int day = TimeUtils.getDay(TimeUtils.getNow());
+		int month = TimeUtils.getMonth(TimeUtils.getNow());
+		int year = TimeUtils.getYear(TimeUtils.getNow());
+
+		System.out.println(TimeUtils.buildData(day, month-1, year)+" - "+month);
 	}
 	
 	/*

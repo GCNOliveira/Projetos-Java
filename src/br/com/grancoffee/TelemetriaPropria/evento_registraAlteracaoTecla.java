@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Iterator;
 
+import com.sankhya.util.BigDecimalUtil;
 import com.sankhya.util.TimeUtils;
 
 import br.com.sankhya.extensions.eventoprogramavel.EventoProgramavelJava;
@@ -90,6 +91,7 @@ public class evento_registraAlteracaoTecla implements EventoProgramavelJava {
 		String patrimonio = newVO.asString("CODBEM");
 		String tecla = newVO.asBigDecimal("TECLA").toString();
 		BigDecimal produto = newVO.asBigDecimal("CODPROD");
+		BigDecimal estoque = BigDecimalUtil.getValueOrZero(getEstoque(patrimonio, tecla, produto));
 		
 		if(validaSeOhPatrimonioEstaNaTelaDeInstalacoes(patrimonio)) {
 			String microMarketing = validaSeEhMicroMarketing(patrimonio);
@@ -128,6 +130,7 @@ public class evento_registraAlteracaoTecla implements EventoProgramavelJava {
 						VO.setProperty("NIVELALERTA", newVO.asBigDecimal("AD_NIVELALERTA"));
 						VO.setProperty("VLRPAR", newVO.asBigDecimal("VLRPAR"));
 						VO.setProperty("VLRFUN", newVO.asBigDecimal("VLRFUN"));
+						VO.setProperty("ESTOQUE", estoque);
 
 						itemEntity.setValueObject(NVO);
 					}	
@@ -147,6 +150,20 @@ public class evento_registraAlteracaoTecla implements EventoProgramavelJava {
 			 micromarketing="N";
 		 }
 		 return micromarketing;
+	}
+	
+	private BigDecimal getEstoque(String patrimonio, String tecla, BigDecimal produto) throws Exception {
+		
+		BigDecimal estoque = null;
+		JapeWrapper DAO = JapeFactory.dao("AD_ESTOQUE");
+		DynamicVO VO = DAO.findOne("this.CODBEM=? AND this.TECLA=? AND this.CODPROD=?",new Object[] { patrimonio, tecla, produto });
+		if(VO!=null) {
+			estoque = VO.asBigDecimal("ESTOQUE");
+		}else {
+			estoque = new BigDecimal(0);
+		}
+		
+		return estoque;
 	}
 	
 	private boolean validaSeOhPatrimonioEstaNaTelaDeInstalacoes(String patrimonio) throws Exception {
@@ -212,11 +229,13 @@ public class evento_registraAlteracaoTecla implements EventoProgramavelJava {
 	private void inserirTecla(PersistenceEvent arg0) throws Exception {
 		DynamicVO teclas = (DynamicVO) arg0.getVo();
 		String patrimonio = teclas.asString("CODBEM");
-		
+
 		if(validaSeOhPatrimonioEstaNaTelaDeInstalacoes(patrimonio)) {
 			String micromarketing = validaSeEhMicroMarketing(patrimonio);
 			
 			try {
+				
+				BigDecimal estoque = BigDecimalUtil.getValueOrZero(getEstoque(patrimonio, teclas.asBigDecimal("TECLA").toString(), teclas.asBigDecimal("CODPROD")));
 				
 				EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
 				EntityVO NPVO = dwfFacade.getDefaultValueObjectInstance("GCPlanograma");
@@ -232,7 +251,7 @@ public class evento_registraAlteracaoTecla implements EventoProgramavelJava {
 				VO.setProperty("VLRPAR", teclas.asBigDecimal("VLRPAR"));
 				VO.setProperty("VLRFUN", teclas.asBigDecimal("VLRFUN"));
 				VO.setProperty("AD_ABASTECER", "S");
-				VO.setProperty("ESTOQUE", new BigDecimal(0));
+				VO.setProperty("ESTOQUE", estoque);
 				
 				if(teclas.asBigDecimal("AD_NIVELPAR")!=null) {
 					VO.setProperty("NIVELPAR", teclas.asBigDecimal("AD_NIVELPAR"));

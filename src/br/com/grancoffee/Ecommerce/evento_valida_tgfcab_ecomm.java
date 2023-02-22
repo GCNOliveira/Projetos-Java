@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Iterator;
 
+import com.sankhya.util.BigDecimalUtil;
 import com.sankhya.util.TimeUtils;
 
 import br.com.sankhya.extensions.eventoprogramavel.EventoProgramavelJava;
@@ -29,7 +30,16 @@ public class evento_valida_tgfcab_ecomm implements EventoProgramavelJava {
 
 	@Override
 	public void afterInsert(PersistenceEvent arg0) throws Exception {
-
+		DynamicVO VO = (DynamicVO) arg0.getVo();
+		BigDecimal usuarioInclusao = VO.asBigDecimal("CODUSUINC");
+		
+		if(usuarioInclusao.intValue() == 3538) {
+			BigDecimal tipoPagamento = VO.asBigDecimal("CODTIPVENDA");
+			if(tipoPagamento.intValue() == 1333) {
+				
+			}
+		}
+		
 	}
 
 	@Override
@@ -107,11 +117,12 @@ public class evento_valida_tgfcab_ecomm implements EventoProgramavelJava {
 		}
 	}
 
-	private void start(PersistenceEvent arg0) {
+	private void start(PersistenceEvent arg0) throws Exception {
 		DynamicVO VO = (DynamicVO) arg0.getVo();
 		BigDecimal usuarioInclusao = VO.asBigDecimal("CODUSUINC");
 		BigDecimal top = VO.asBigDecimal("CODTIPOPER");
 		String idVtex = VO.asString("AD_PEDIDOVTEX");
+		BigDecimal tipoPagamento = VO.asBigDecimal("CODTIPVENDA");
 
 		if (usuarioInclusao.intValue() == 3538) { // usuario e-commerce
 			if (idVtex != null) {
@@ -120,16 +131,39 @@ public class evento_valida_tgfcab_ecomm implements EventoProgramavelJava {
 					throw new Error("Pedido " + idVtex + " já existe, não pode ser cadastrado novamente !");
 				}
 				
+				//TODO :: muda o tipo de pagamento promissória.
+	        	if(tipoPagamento.intValue()==1333) {
+	        		BigDecimal parceiro = VO.asBigDecimal("CODPARC");
+	        		DynamicVO tgfcpl = getTGFCPL(parceiro);
+	        		if(tgfcpl!=null) {
+	        			BigDecimal sugestaoTipNeg = BigDecimalUtil.getValueOrZero(tgfcpl.asBigDecimal("SUGTIPNEGSAID"));
+	        			if(sugestaoTipNeg.intValue()>0) {
+	        				VO.setProperty("CODTIPVENDA", sugestaoTipNeg);
+	        			}
+	        		}
+	        	}
+				
 				//TODO :: Verificar se tem observações adicionais
 				String observacaoAtual = VO.asString("OBSERVACAO");
 				String obsAdicional = verificaObservacaoAdicional();
 				if(obsAdicional!=null && obsAdicional!="") {
 					String newObs = observacaoAtual+" "+obsAdicional;
 					VO.setProperty("OBSERVACAO", newObs);
-				}	
+				}
+				
+				//TODO :: Ajustar frete 03/06/22
+				VO.setProperty("CIF_FOB", "C");
+				VO.setProperty("TIPFRETE", "S");
+				VO.setProperty("VENCFRETE", TimeUtils.dataAddDay(TimeUtils.getNow(), 30));
 			}
 		}
 		
+	}
+	
+	private DynamicVO getTGFCPL(BigDecimal parceiro) throws Exception {
+		JapeWrapper DAO = JapeFactory.dao("ComplementoParc");
+		DynamicVO VO = DAO.findOne("CODPARC=?",new Object[] { parceiro });
+		return VO;
 	}
 	
 	private String verificaObservacaoAdicional() {

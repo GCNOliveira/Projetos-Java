@@ -2,7 +2,12 @@ package br.com.grancoffee.TelemetriaPropria;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 
 import com.sankhya.util.BigDecimalUtil;
@@ -23,6 +28,11 @@ import br.com.sankhya.modelcore.util.EntityFacadeFactory;
 import br.com.sankhya.ws.ServiceContext;
 
 public class evento_valida_gc_instalacao implements EventoProgramavelJava{
+	
+	/**
+	 * 27/05/2022 vs 1.4 Inserida no before insert para já marcar a máquina como liberada.
+	 * 03/06/2022 vs 1.5 Inserido o método para as validações gerais
+	 */
 
 	@Override
 	public void afterDelete(PersistenceEvent arg0) throws Exception {
@@ -113,8 +123,9 @@ public class evento_valida_gc_instalacao implements EventoProgramavelJava{
 				verificaTeclasContrato(patrimonio, loja);
 			}
 		}
+		
+		validaInventarioObrigatorio(arg0);
 	}
-	
 	
 	//Valiações
 	private boolean verificaTeclasDuplicadas(String patrimonio) {
@@ -143,6 +154,108 @@ public class evento_valida_gc_instalacao implements EventoProgramavelJava{
 		return valida;
 	}
 	
+	private void validaInventarioObrigatorio(PersistenceEvent arg0) {
+		DynamicVO VO = (DynamicVO) arg0.getVo();
+		String frequencia = VO.asString("AD_FREQCONTAGEM");
+		Timestamp dtUltimoInventario = VO.asTimestamp("AD_DTULTCONTAGEM");
+		ArrayList<String> diasParaSeremConsiderados = diasParaSeremConsiderados(VO);
+		Timestamp dataFinal = null;
+		
+		if(!"99".equals(frequencia) && frequencia!=null) { //frequencia diferente de informada manualmente.
+			if(diasParaSeremConsiderados.size()>0) {
+				dataFinal = validaInventDiario(dtUltimoInventario, new BigDecimal(frequencia).intValue(), diasParaSeremConsiderados);
+			}
+			
+			if(dataFinal!=null) {
+				VO.setProperty("AD_DTPROXINVENT", dataFinal);
+			}
+		}	
+		
+	}
+	
+	private Timestamp validaInventDiario(Timestamp dtUltimoInventario, int frequencia, ArrayList<String> diasParaSeremConsiderados) {
+		if(dtUltimoInventario==null) {
+			dtUltimoInventario = TimeUtils.getNow();
+		}
+		Timestamp dataTemp = addDias(dtUltimoInventario, new BigDecimal(frequencia));
+		String diaSemana = getDiaDaSemana(dataTemp);
+		
+		boolean dataValida = false;
+		int somaDia = 1;
+		Timestamp dataFinal = null;
+		
+		while(dataValida==false) {
+			if(diasParaSeremConsiderados.contains(diaSemana)) {
+				dataValida = true;
+				dataFinal = dataTemp;
+			}else {
+				dataTemp = addDias(dataTemp, new BigDecimal(somaDia));
+				diaSemana = getDiaDaSemana(dataTemp);
+			}
+		}
+		
+		return dataFinal;
+		
+	}
+	
+	
+	private Timestamp addDias(Timestamp datainicial,BigDecimal prazo){
+		GregorianCalendar gcm = new GregorianCalendar();
+		Date data = new Date(datainicial.getTime());
+		gcm.setTime(data);
+		gcm.add(Calendar.DAY_OF_MONTH, prazo.intValue());
+		data = gcm.getTime();
+		Timestamp dataInicialMaisPrazo = new Timestamp(data.getTime());
+		
+		return dataInicialMaisPrazo;
+	}
+	
+	private static String getDiaDaSemana(Timestamp datainicial) {
+		Calendar cal = Calendar.getInstance();
+		Date data = new Date(datainicial.getTime());
+		cal.setTime(data);
+		String dia="";
+		
+		String[] strDays = new String[] { "Domingo", "Segunda", "Terça","Quarta", "Quinta", "Sexta", "Sabado"};
+		dia = strDays[cal.get(Calendar.DAY_OF_WEEK) - 1];
+		
+		return dia;
+	}
+	
+	private ArrayList<String> diasParaSeremConsiderados(DynamicVO VO) {
+		ArrayList<String> listaDeDias = new ArrayList<String>();
+		String segunda = VO.asString("AD_SEGUNDA");
+		if("S".equals(segunda)) {
+			listaDeDias.add("Segunda");
+		}
+		String terca = VO.asString("AD_TERCA");
+		if("S".equals(terca)) {
+			listaDeDias.add("Terça");
+		}
+		String quarta = VO.asString("AD_QUARTA");
+		if("S".equals(quarta)) {
+			listaDeDias.add("Quarta");
+		}
+		String quinta = VO.asString("AD_QUINTA");
+		if("S".equals(quinta)) {
+			listaDeDias.add("Quinta");
+		}
+		String sexta = VO.asString("AD_SEXTA");
+		if("S".equals(sexta)) {
+			listaDeDias.add("Sexta");
+		}
+		String sabado = VO.asString("AD_SABADO");
+		if("S".equals(sabado)) {
+			listaDeDias.add("Sabado");
+		}
+		String domingo = VO.asString("AD_DOMINGO");
+		if("S".equals(domingo)) {
+			listaDeDias.add("Domingo");
+		}
+		return listaDeDias;
+	}
+	
+	
 	private boolean verificaVisitaPendente(String patrimonio) {
 		boolean valida = false;
 
@@ -167,7 +280,6 @@ public class evento_valida_gc_instalacao implements EventoProgramavelJava{
 
 		return valida;
 	}
-	
 	
 	//ALTERAR MÁQUINA P/LOJA
 	//1° exclui as teclas
@@ -296,11 +408,16 @@ public class evento_valida_gc_instalacao implements EventoProgramavelJava{
 		
 		String loja = VO.asString("TOTEM");
 		
+		VO.setProperty("AD_LIBERADA", "S");
+		VO.setProperty("AD_DTLIBERADA", TimeUtils.getNow());;
+		
 		if("S".equals(loja)) {
 			if(!verificaGrupoProdutoDaMaquina(patrimonio)) {
 				throw new Error("<br/><b>ATENÇÃO</b><br/>Patrimônio não pode ser marcado como <b>Micro Market</b>.<br/><br/><b>motivo:</b> No cadastro do grupo de produtos deste patrimônio o campo Loja não está tickado!<br/><br/>");
 			}
 		}
+		
+		validaInventarioObrigatorio(arg0);
 	}
 	
 	private void cadastraTelemetrias(BigDecimal idTelemetria, String codbem) {
@@ -343,7 +460,6 @@ public class evento_valida_gc_instalacao implements EventoProgramavelJava{
 		
 		return valida;
 	}
-	
 	
 	private void registraFila(String patrimonio, String nopick) {
 	
