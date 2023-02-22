@@ -41,18 +41,22 @@ public class evento_validaEtapas implements EventoProgramavelJava {
 
 	@Override
 	public void beforeInsert(PersistenceEvent arg0) throws Exception {
+	//	validacoes(arg0);
 		insert(arg0);
+		
 	}
 
 	@Override
 	public void beforeUpdate(PersistenceEvent arg0) throws Exception {
-		update(arg0);		
+		validacoes(arg0);
+		update(arg0);
 	}
 	
 	private void insert(PersistenceEvent arg0) {
 		DynamicVO VO = (DynamicVO) arg0.getVo();
 		String status = VO.asString("STATUS");
 		Timestamp dtfim = VO.asTimestamp("DTFIM");
+		Timestamp dtprevini = VO.asTimestamp("DTPREVINI");
 		
 		if("2".equals(status)) {
 			VO.setProperty("DTFIM", TimeUtils.getNow());
@@ -62,9 +66,14 @@ public class evento_validaEtapas implements EventoProgramavelJava {
 			VO.setProperty("STATUS", "2");
 		}
 		
-		if(status==null) {
+		if(dtprevini!=null) {
 			VO.setProperty("STATUS", "1");
 		}
+		
+	/*	if(status==null) {
+			VO.setProperty("STATUS", "1");
+		}
+		*/
 	}
 	
 	private void update(PersistenceEvent arg0) {
@@ -76,6 +85,8 @@ public class evento_validaEtapas implements EventoProgramavelJava {
 		
 		Timestamp dtfim = VO.asTimestamp("DTFIM");
 		Timestamp olddtfim = oldVO.asTimestamp("DTFIM");
+		Timestamp dtprevini = VO.asTimestamp("DTPREVINI");
+		Timestamp olddtprevini = oldVO.asTimestamp("DTPREVINI");
 		
 		if(status!=oldstatus) {
 			if("2".equals(status)) {
@@ -92,6 +103,43 @@ public class evento_validaEtapas implements EventoProgramavelJava {
 				VO.setProperty("STATUS", "2");
 			}
 		}
+	
+		if(dtprevini!=olddtprevini) {
+			if(dtprevini!=null) {
+				VO.setProperty("STATUS", "1");
+			}
+			
+			if(dtprevini==null) {
+				VO.setProperty("STATUS", null);
+			}
+		}
 	}
+	
 
+	
+	private void validacoes(PersistenceEvent arg0) {
+		DynamicVO VO = (DynamicVO) arg0.getVo();
+		DynamicVO oldVO = (DynamicVO) arg0.getOldVO();
+		String mensagem = "";
+		String status = VO.asString("STATUS");
+		String oldstatus = oldVO.asString("STATUS");
+		Timestamp dtprevini = VO.asTimestamp("DTPREVINI");
+		Timestamp olddtprevini = oldVO.asTimestamp("DTPREVINI");
+		Timestamp dtprevfim = VO.asTimestamp("DTPREVFIM");
+		Timestamp olddtprevfim = oldVO.asTimestamp("DTPREVFIM");
+		
+		if(status!=oldstatus) {
+			if(status != null) {
+					if(dtprevini==null) {
+						mensagem = "<b>A 'Dt. Prev. Inicio' precisa ser informada!</b>";
+						throw new Error(mensagem);
+					}
+					if(dtprevfim==null) {
+						mensagem = "<b>A 'Dt. Prev. Fim' precisa ser informada!</b>";
+						throw new Error(mensagem);
+					}
+			}
+			
+		}
+	}
 }
